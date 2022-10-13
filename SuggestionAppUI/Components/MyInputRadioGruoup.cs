@@ -2,7 +2,7 @@
 
 namespace SuggestionAppUI.Components;
 
-public class CustomInputRadioGroup<TValue> : InputRadioGroup<TValue>
+public class MyInputRadioGroup<TValue> : InputRadioGroup<TValue>
 {
    private string _name;
    private string _fieldClass;
