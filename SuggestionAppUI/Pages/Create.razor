@@ -19,9 +19,14 @@
         //TODO - Replace with the user lookup
         loggedInUser = await userData.GetUserFromAuthentication("abc-123");
     }
-
+    
     private void ClosePage()
     {
         navManager.NavigateTo("/");
+    }
+
+    private async Task CreateSuggestion()
+    {
+        
     }
 }
