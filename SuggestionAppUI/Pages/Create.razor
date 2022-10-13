@@ -27,6 +27,20 @@
 
     private async Task CreateSuggestion()
     {
-        
+         // Mapping suggestion to CreateSuggestionModel
+        SuggestionModel s = new();
+        s.Suggestion = suggestion.Suggestion;
+        s.Description = suggestion.Description;
+        s.Author = new BasicUserModel(loggedInUser);
+        s.Category = categories.Where(c => c.Id == suggestion.CategoryId).FirstOrDefault();
+        if (s.Category is null)
+        {
+            suggestion.CategoryId = "";
+            return;
+        }
+
+        await suggestionData.CreateSuggestion(s);
+        suggestion = new();
+        ClosePage();
     }
 }
