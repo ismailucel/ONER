@@ -1,6 +1,9 @@
 ﻿@page "/Details/{Id}"
-@inject ISuggestionData suggestionData
+@inject AuthenticationStateProvider authProvider
 @inject NavigationManager navManager
+@inject IUserData userData
+@inject ISuggestionData suggestionData
+@inject IStatusData statusData
 
 <h1>Suggestion Details</h1>
 
@@ -11,7 +14,7 @@
             <div>
                 @*Left hand side*@
                 <div>
-                    <div>
+                        <div @onclick="VoteUp">
                             <div>@GetUpvoteTopText()</div>
                             <span class="oi oi-caret-top"></span>
                             <div>@GetUpvoteBottomText()</div>
@@ -59,11 +62,17 @@
     public string Id { get; set; } //public because other pages will access this variable
 
     private SuggestionModel suggestion;
+    private UserModel loggedInUser;
+    private List<StatusModel> statuses;
+    private string settingStatus = "";
+    private string urlText = "";
 
     protected async override Task OnInitializedAsync()
     {
-        // Get data of the suggestion that was selected
+       //Get data of the suggestion that was selected
         suggestion = await suggestionData.GetSuggestion(Id);
+        loggedInUser = await authProvider.GetUserFromAuth(userData);
+        statuses = await statusData.GetAllStatuses();
     }
 
     private void ClosePage()
@@ -94,5 +103,32 @@
             return "Upvote";
         }
     }
+
+    private async Task VoteUp()
+    {
+        if (loggedInUser is not null)
+        {
+            if (suggestion.Author.Id == loggedInUser.Id)
+            {
+                // Can't vote on your own suggestion
+                return;
+            }
+
+            // UserVotes is a hashSet and cannot have duplicate values
+            // Does it locally
+            if (suggestion.UserVotes.Add(loggedInUser.Id) == false)
+            {
+                suggestion.UserVotes.Remove(loggedInUser.Id);
+            }
+
+            // Update to database
+            await suggestionData.UpVoteSuggestion(suggestion.Id, loggedInUser.Id);
+        }
+        else
+        {
+            navManager.NavigateTo("/MicrosoftIdentity/Account/SignIn", true);
+        }
+    }
+
 
 }

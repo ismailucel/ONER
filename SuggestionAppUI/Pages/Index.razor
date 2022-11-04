@@ -38,7 +38,7 @@
             //only the elements actually show on the page +10
             <Virtualize Items="@suggestions" Context ="s" OverscanCount="10">
                 <div>
-                    <div>
+                    <div @onclick="(() => VoteUp(s))">
                         <div>@GetUpvoteTopText(s)</div>
                         <span class="oi oi-caret-top"></span>
                         <div>@GetUpvoteBottomText(s)</div>
@@ -200,11 +200,11 @@
         {
             if (suggestion.Author.Id == loggedInUser.Id)
             {
-                // Can't vote on your own suggestion
+                // You can't vote on your own suggestion
                 return;
             }
 
-            // UserVotes is a hashSet and cannot have duplicate values
+            // UserVotes is a hashSet and cannot have duplicate values. It's gonna return false if you are trying to upvote more than once. It will remove the upvote.
             // Does it locally
             if (suggestion.UserVotes.Add(loggedInUser.Id) == false)
             {
@@ -221,7 +221,7 @@
         }
         else
         {
-            navManager.NavigateTo("/MicrosoftIdentity/Account/SignIn", true);
+            navManager.NavigateTo("/MicrosoftIdentity/Account/SignIn", true); //takes you to login page if you are not signed in
         }
     }
 
@@ -240,7 +240,14 @@
             }
             else
             {
+                if (suggestion.Author.Id == loggedInUser?.Id)
+            {
+                return "Awaiting";
+            }
+            else
+            {
                 return "Click To";
+            }
             }
         }
     }
