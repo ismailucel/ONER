@@ -102,7 +102,8 @@
     {
         categories = await categoryData.GetAllCategories();
         statuses = await statusData.GetAllStatuses();
-        loggedInUser = await authProvider.GetUserFromAuth(userData);
+        await LoadAndVerifyUser();
+
     }
 
     // Runs after the page gets rendered
@@ -220,6 +221,63 @@
     private void OpenDetails(SuggestionModel suggestion)
     {
         navManager.NavigateTo($"/Details/{suggestion.Id}");
+    }
+    private async Task LoadAndVerifyUser()
+    {
+        var authState = await authProvider.GetAuthenticationStateAsync();
+        string objectId = authState.User.Claims.FirstOrDefault(c => c.Type.Contains("objectidentifier"))?.Value;
+        if (string.IsNullOrWhiteSpace(objectId) == false)
+        {
+            loggedInUser = await userData.GetUserFromAuthentication(objectId) ?? new();
+            string firstName = authState.User.Claims.FirstOrDefault(c => c.Type.Contains("givenname"))?.Value;
+            string lastName = authState.User.Claims.FirstOrDefault(c => c.Type.Contains("surname"))?.Value;
+            string displayName = authState.User.Claims.FirstOrDefault(c => c.Type.Equals("name"))?.Value;
+            string email = authState.User.Claims.FirstOrDefault(c => c.Type.Contains("email"))?.Value;
+            bool isDirty = false; // flag for checking if data is updated or being created for the first time
+            if (objectId.Equals(loggedInUser.ObjectIdentifier) == false)
+            {
+                isDirty = true;
+                loggedInUser.ObjectIdentifier = objectId;
+            }
+
+            if (firstName.Equals(loggedInUser.FirstName) == false)
+            {
+                isDirty = true;
+                loggedInUser.FirstName = firstName;
+            }
+
+            if (lastName.Equals(loggedInUser.LastName) == false)
+            {
+                isDirty = true;
+                loggedInUser.LastName = lastName;
+            }
+
+            if (displayName.Equals(loggedInUser.DisplayName) == false)
+            {
+                isDirty = true;
+                loggedInUser.DisplayName = displayName;
+            }
+
+            if (email.Equals(loggedInUser.EmailAddress) == false)
+            {
+                isDirty = true;
+                loggedInUser.EmailAddress = email;
+            }
+
+            // If it's modified/updated
+            if (isDirty)
+            {
+                // If the mongoDB Id is not present
+                if (string.IsNullOrWhiteSpace(loggedInUser.Id))
+                {
+                    await userData.CreateUser(loggedInUser);
+                }
+                else
+                {
+                    await userData.UpdateUser(loggedInUser);
+                }
+            }
+        }
     }
 
 
